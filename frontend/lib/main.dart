@@ -1,115 +1,312 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import './detail.dart';
+import './adddata.dart';
+
 import 'package:flutter/material.dart';
 
+
 void main() {
-  runApp(const MyApp());
+  runApp(new MaterialApp(
+    title: "CRUD APP",
+    home: new Home(),
+    debugShowCheckedModeBanner: false,
+  ));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class Home extends StatefulWidget {
+  @override
+  _HomeState createState() => new _HomeState();
+}
 
-  // This widget is the root of your application.
+class _HomeState extends State<Home> {
+  Future<List> getData() async {
+    var url = "http://localhost:8080/paket/";
+
+    final response = await http.get(Uri.parse(url));
+    // final "[" + response.body + "]";
+    debugPrint(response.body);
+    return json.decode(response.body);
+    
+  }
+
+ 
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
+    return new Scaffold(
+      appBar: new AppBar(
+        title: new Text("NOMI STORE"),
+        backgroundColor: Colors.indigo,
+        // actions: new Icon(Icons.add),
+        actions: <Widget>[
+          new Icon(Icons.store_mall_directory),
+          new Padding(
+                  padding: const EdgeInsets.only(right: 12.0),
+          ), 
+        ],
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      floatingActionButton: new FloatingActionButton(
+        child: new Icon(Icons.add),
+        // onPressed: () => Navigator.of(context).push(new MaterialPageRoute(
+        //   builder: (BuildContext context) => new AddData(),
+        // )),
+        backgroundColor: Colors.indigo,
+        onPressed: () => Navigator.push(
+                context, MaterialPageRoute(builder: (context) => AddData()))
+            .then((value) => setState(() {})),
+      ),
+      body: new FutureBuilder<List>(
+        future: getData(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) print(snapshot.error);
+
+          return snapshot.hasData
+              ? new ItemList(
+                  list: snapshot.data ?? [],
+                )
+              : new Center(
+                  child: new CircularProgressIndicator(),
+                );
+        },
+      ),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+class ItemList extends StatelessWidget {
+  final List list;
+  ItemList({required this.list});
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+    return new ListView.builder(
+      itemCount: list == null ? 0 : list.length,
+      itemBuilder: (context, i) {
+        return new Container(
+          height: 100,
+          padding: const EdgeInsets.all(10.0),
+          child: new GestureDetector(
+            onTap: () => Navigator.of(context).push(new MaterialPageRoute(
+                builder: (BuildContext context) => new Detail(
+                      list: list,
+                      index: i,
+                    ))),
+            child: new Card(
+              
+              child: new ListTile(
+                // ignore: prefer_const_constructors
+                title: new Text(list[i]['nama_paket'], style: new TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                leading: Image.network("http://localhost:8080/image/paket/" + list[i]['image'], width: 50, height: 100,),
+                // subtitle: new Text("${list[i]['item_code']} - ${list[i]['stock']} available", style: new TextStyle(fontSize: 14, fontWeight: FontWeight.w300)),
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+          ),
+        );
+      },
     );
   }
 }
+
+// import 'dart:convert';
+// import 'package:flutter/cupertino.dart';
+// import 'package:flutter_html/flutter_html.dart';
+// import 'package:http/http.dart' as http;
+
+// import 'package:flutter/material.dart';
+
+// void main() => runApp(MyApp());
+
+// class MyApp extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       title: 'Flutter Demo',
+//       theme: ThemeData(
+//         primarySwatch: Colors.blue,
+//       ),
+//       home: MyHomePage(title: 'Wikipedia search API'),
+//     );
+//   }
+// }
+
+// class MyHomePage extends StatefulWidget {
+//   final String title;
+//   const MyHomePage({Key? key, required this.title}) : super(key: key);
+
+//   @override
+//   _MyHomePageState createState() => _MyHomePageState();
+// }
+
+// class _MyHomePageState extends State<MyHomePage> {
+//   final searchTextController = TextEditingController();
+//   List<WikiSearchEntity> searchList = [];
+
+//   void _search() {
+//     String str = searchTextController.text;
+//     RequestService.query(str).then((WikiSearchResponse? response) {
+//       setState(() {
+//         searchList = response!.query.search;
+//       });
+//     });
+//   }
+
+//   @override
+//   void dispose() {
+//     searchTextController.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text(widget.title),
+//       ),
+//       body: Container(
+//         child: Padding(
+//           padding: EdgeInsets.all(10),
+//           child: Column(
+//             mainAxisAlignment: MainAxisAlignment.start,
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: <Widget>[
+//               Row(
+//                   mainAxisAlignment: MainAxisAlignment.center,
+//                   crossAxisAlignment: CrossAxisAlignment.center,
+//                   children: [
+//                     Expanded(
+//                       child: TextField(
+//                         controller: searchTextController,
+//                         obscureText: false,
+//                         decoration: InputDecoration(
+//                           border: OutlineInputBorder(),
+//                           labelText: 'TextField',
+//                         ),
+//                       ),
+//                     ),
+//                     SizedBox(
+//                       width: 10,
+//                     ),
+//                     Container(
+//                       height: 60,
+//                       child: OutlinedButton(
+//                         onPressed: _search,
+//                         child: Text("Search"),
+//                       ),
+//                     ),
+//                   ]
+//               ),
+//               SizedBox(
+//                 height: 10,
+//               ),
+//               Expanded(child:
+//                 SingleChildScrollView(
+//                 child: ListView.builder(
+//                   primary: false,
+//                   itemBuilder: (BuildContext context,
+//                       int index) => new WikiSearchItemWidget(searchList[index]),
+//                   itemCount: searchList.length,
+//                   shrinkWrap: true,
+//                 ),
+//               ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// class WikiSearchItemWidget extends StatelessWidget {
+//   final WikiSearchEntity _entity;
+
+//   WikiSearchItemWidget(this._entity);
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return ListTile(
+//       title: Text(_entity.title,
+//         style: TextStyle(
+//           fontSize: 20,
+//           fontWeight: FontWeight.w700,
+//         ),
+//       ),
+//       subtitle: SingleChildScrollView(
+//         child: Html(data: _entity.snippet),
+//       ),
+//       onTap: () {
+
+//       },
+//     );
+//   }
+// }
+
+// class RequestService {
+//   static Future<WikiSearchResponse?> query(String search) async {
+//     var response = await http.get(
+//         Uri.parse("https://en.wikipedia.org/w/api.php?action=query&origin=*&list=search&srsearch=$search&format=json")
+//     );
+//     // Check if response is success
+//     if (response.statusCode >= 200 && response.statusCode < 300) {
+//       var map = json.decode(response.body);
+//       return WikiSearchResponse.fromJson(map);
+//     } else {
+//       print("Query failed: ${response.body} (${response.statusCode})");
+//       return null;
+//     }
+//   }
+// }
+
+// class WikiSearchResponse {
+//   String batchComplete;
+//   WikiQueryResponse query;
+//   WikiSearchResponse({required this.batchComplete, required this.query});
+
+//   factory WikiSearchResponse.fromJson(Map<String, dynamic> json) => WikiSearchResponse(
+//       batchComplete: json["batchcomplete"],
+//       query: WikiQueryResponse.fromJson(json["query"])
+//   );
+// }
+
+// class WikiQueryResponse {
+//   List<WikiSearchEntity> search;
+
+//   WikiQueryResponse({required this.search});
+
+//   factory WikiQueryResponse.fromJson(Map<String, dynamic> json) {
+//     List<dynamic> resultList = json['search'];
+//     List<WikiSearchEntity> search = resultList.map((dynamic value) =>
+//         WikiSearchEntity.fromJson(value))
+//         .toList(growable: false);
+//     return WikiQueryResponse(
+//         search: search
+//     );
+//   }
+// }
+
+// class WikiSearchEntity {
+//   int ns;
+//   String title;
+//   int pageId;
+//   int size;
+//   int wordCount;
+//   String snippet;
+//   String timestamp;
+//   WikiSearchEntity({required this.ns, required this.title,
+//     required this.pageId, required this.size, required this.wordCount,
+//     required this.snippet, required this.timestamp});
+
+//   factory WikiSearchEntity.fromJson(Map<String, dynamic> json) => WikiSearchEntity(
+//     ns: json["ns"],
+//     title: json["title"],
+//     pageId: json["pageid"],
+//     size: json["size"],
+//     wordCount: json["wordcount"],
+//     snippet: json["snippet"],
+//     timestamp: json["timestamp"]
+//   );
+// }
